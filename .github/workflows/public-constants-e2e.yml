@@ -1,0 +1,55 @@
+name: INDIANA public-constant E2E
+
+on:
+  push:
+    branches:
+      - test/public-constants-e2e
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-constant-regression:
+    name: Public inputs, constants, and register stages
+    runs-on: self-hosted
+    timeout-minutes: 40
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+
+      - name: Report self-hosted runner dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Host: $(uname -a)"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          command -v g++ && g++ --version | head -1
+          command -v make && make --version | head -1
+          command -v python3 && python3 --version
+          echo "CUDD libraries:"
+          (ldconfig -p 2>/dev/null | grep libcudd || true)
+          for dir in /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu ./lib; do
+            if [[ -d "$dir" ]]; then
+              find "$dir" -maxdepth 1 -name 'libcudd*' -print || true
+            fi
+          done
+          echo "Boost program_options libraries:"
+          (ldconfig -p 2>/dev/null | grep libboost_program_options || true)
+
+      - name: Build INDIANA from the fork
+        shell: bash
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
+        run: |
+          set -euo pipefail
+          make release -j2
+          test -x bin/release/indiana
+
+      - name: Execute 12 end-to-end regressions
+        shell: bash
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
+        run: |
+          set -euo pipefail
+          python3 tests/public_constants_e2e.py
