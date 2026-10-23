@@ -9,6 +9,7 @@ import argparse
 import json
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -129,6 +130,17 @@ def run_case(binary: pathlib.Path, tmp: pathlib.Path,
     reports = len(REPORT.findall(cleaned))
     failures = len(FAILURE.findall(cleaned))
     did_finish = bool(DONE.search(cleaned))
+    if cp.returncode < 0 and label == "v_fixed0_safe":
+        if shutil.which("gdb"):
+            debug = subprocess.run(
+                ["gdb", "-q", "--batch", "-ex", "set pagination off",
+                 "-ex", "run", "-ex", "bt", "--args", *command],
+                cwd=ROOT, capture_output=True, text=True, timeout=35,
+            )
+            print("[GDB] constant-input crash stack trace:")
+            print((debug.stdout + "\\n" + debug.stderr)[-12000:], flush=True)
+        else:
+            print("[GDB] debugger unavailable on self-hosted runner", flush=True)
     observed_leak = bool(failures)
     ok = (cp.returncode == 0 and did_finish and reports > 0
           and observed_leak == should_leak)
