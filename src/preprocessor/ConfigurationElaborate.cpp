@@ -231,6 +231,10 @@ ConfigurationElaborate::gate_store_stage_variables(verica::Netlist* model, const
         //     model->insert_stage_variable(wire->uid(), wire->uid(), m_inst_num);
         // } else {
             for(auto elem : wire->source_pin()->parent_module()->input_pins()){
+                // Literal 0/1 pins add no stage-dependent input variables.
+                if (elem->is_const()) continue;
+                if (elem->fan_in() == nullptr)
+                    throw std::logic_error("[ELABORATE] Non-constant gate input has no driver wire.");
                 model->insert_stage_variable(wire->uid(), elem->fan_in()->stage_variables(m_inst_num), m_inst_num);
             }
         // }

@@ -251,6 +251,10 @@ ConfigurationProperties::gate_store_variables(verica::Netlist* model, const veri
     } else if(wire->source_pin()->parent_module()->input_pins().size() > 0) {
 
         for(auto elem : wire->source_pin()->parent_module()->input_pins()){
+            // Literal 0/1 pins have no driver wire and no variable support.
+            if (elem->is_const()) continue;
+            if (elem->fan_in() == nullptr)
+                throw std::logic_error("[PROPERTIES] Non-constant gate input has no driver wire.");
             model->insert_variable(wire->uid(), elem->fan_in()->variables(core), core);
         }
     } else {
