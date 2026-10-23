@@ -39,6 +39,8 @@ def make_nl(symbolic: bool, leak: bool, registered: bool = False, bit: int = 0) 
         wire = add("xor", wire, 2)
     elif bit:
         wire = add("not", wire)
+    elif not leak and not registered:
+        wire = add("buf", wire)  # NL parser requires at least one gate
     # Fixed p=0 maps to the preceding wire directly.
     if registered:
         wire = add("reg", wire)
@@ -97,7 +99,7 @@ def config(file: pathlib.Path, is_v: bool, annotation: pathlib.Path) -> dict:
         "side-channel": {
             "enable": True,
             "configuration": {"order": 1, "masking": 0, "interrupt": False},
-            "model": {"glitches": False, "transitions": False, "couplings": False},
+            "model": {"glitches": True, "transitions": False, "couplings": False},
             "analysis": {"uniformity": False, "probing": True, "random-probing": False},
             "random-probing": {
                 "copy-gates": "none", "cycle-accurate": False,
