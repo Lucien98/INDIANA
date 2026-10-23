@@ -15,8 +15,16 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 40
     steps:
+      - name: Remove only old core dumps from this workflow workspace
+        shell: bash
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE"
+          find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -name 'core*' -delete
+
       - name: Check out test branch
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Report self-hosted runner dependencies
         shell: bash
@@ -52,4 +60,5 @@ jobs:
           LD_LIBRARY_PATH: /usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
         run: |
           set -euo pipefail
+          ulimit -c 0
           python3 tests/public_constants_e2e.py
