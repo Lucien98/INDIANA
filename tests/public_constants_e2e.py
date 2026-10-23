@@ -17,7 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 REPORT = re.compile(r"ANALYZER\s+INDIANA\s+(?:SUCCESS|FAILURE)")
 FAILURE = re.compile(r"ANALYZER\s+INDIANA\s+FAILURE")
-DONE = re.compile(r"\bVERICA\s+SCA\s+DONE!")
+DONE = re.compile(r"\b(?:INDIANA|VERICA)\s+SCA\s+DONE!")
 # The last digit of this circuit's secret is x0 xor x1.  Round constant p
 # is PUBLIC, i.e., input without a share annotation.
 def make_nl(symbolic: bool, leak: bool, registered: bool = False, bit: int = 0) -> str:
@@ -69,6 +69,7 @@ def make_v(symbolic: bool, leak: bool, bit: int = 0) -> str:
 ANNOTATION = {
     "type": {"clock": [], "control": [], "refresh": [], "error_flag": []},
     "primary_input_identifier": {},
+    "fault_domain": {"input": {}, "output": {}},
     "share_domain": {
         "input": {"0": ["x0"], "1": ["x1"]},
         "output": {"0": ["y0"], "1": ["y1"]},
@@ -129,7 +130,8 @@ def run_case(binary: pathlib.Path, tmp: pathlib.Path,
     failures = len(FAILURE.findall(cleaned))
     did_finish = bool(DONE.search(cleaned))
     observed_leak = bool(failures)
-    ok = did_finish and reports > 0 and observed_leak == should_leak
+    ok = (cp.returncode == 0 and did_finish and reports > 0
+          and observed_leak == should_leak)
     print(
         f"[{'PASS' if ok else 'FAIL'}] {label}: "
         f"expected={'LEAK' if should_leak else 'SECURE'}, "
