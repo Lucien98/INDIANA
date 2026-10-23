@@ -219,6 +219,10 @@ ConfigurationBreadthDepth::execute(const Settings *settings, State *state) {
                 const verica::Pin* current_pin = to_visit[0];
                 to_visit.erase(to_visit.begin());
 
+                // A literal 0/1 pin has no incoming wire to traverse.
+                if (current_pin->is_const()) continue;
+                if (current_pin->fan_in() == nullptr)
+                    throw std::logic_error("[PARTITION] Non-constant input has no driver.");
                 wires.insert(current_pin->fan_in());
 
                 bool is_partition_input = true;
@@ -239,6 +243,9 @@ ConfigurationBreadthDepth::execute(const Settings *settings, State *state) {
                         partition_inputs.insert(current_pin->fan_in());
                     } else {
                         for(auto p : current_pin->fan_in()->source_pin()->parent_module()->input_pins()){
+                            if (p->is_const()) continue;
+                            if (p->fan_in() == nullptr)
+                                throw std::logic_error("[PARTITION] Non-constant input has no driver.");
                             partition_inputs.insert(p->fan_in());
                         }
                     }
