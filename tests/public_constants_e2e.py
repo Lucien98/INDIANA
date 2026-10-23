@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 REPORT = re.compile(r"ANALYZER\s+INDIANA\s+(?:SUCCESS|FAILURE)")
 FAILURE = re.compile(r"ANALYZER\s+INDIANA\s+FAILURE")
